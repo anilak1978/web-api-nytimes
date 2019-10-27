@@ -1,0 +1,102 @@
+---
+title: "Web APIs"
+author: Anil Akyildirim
+date: "10/19/2019"
+output:
+  html_document:
+    code_download: yes
+    code_folding: hide
+    highlight: pygments
+    number_sections: yes
+    theme: flatly
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r}
+#load libraries
+
+library(httr)
+library(jsonlite)
+library(dplyr)
+library(ggplot2)
+
+```
+
+
+# Introduction
+
+In this assignment, we are tasked to create an developer account within The New York Times website APIs, similarly describe here: https://developer.nytimes.com/apis and further read the information within the JSON data that the API provides and create a dataframe for future analysis. In order to do this, we select one of the Publicly available API's listed in the New York times API Catalog. I have selected Most Popular API and further created an app with an ID and an API Key.
+
+# About the Data
+
+The Most Popular API provides a service getting the most popular articles on NYtimes.com based on emails, shares or views. In this case, I wanted to look at the most shared nytimes articles via facbook for the last 7 days. Based on the documentation provided in the developer guide, my api call should look something like this: " https://api.nytimes.com/svc/mostpopular/v2/shared/7/facebook.json " 
+
+# Data Collection
+
+
+```{r}
+
+url <- "https://api.nytimes.com/svc/mostpopular/v2/shared/7/facebook.json"
+api_key <- "qGvyiL1P77XmJvdGxUu4vufM462qN59H"
+
+#update the url with api key structure example: https://api.nytimes.com/svc/mostpopular/v2/shared/1/facebook.json?api-key=yourkey 
+
+url <- paste(url, "?", "api-key=", api_key, sep = "")
+fb_shares <- GET(url, verbose())
+fb_shares
+
+```
+
+## Creating the Data Frame
+
+```{r}
+#set content and read it from JSON
+content <- content(fb_shares, "text")
+fb_shares <- fromJSON(content)
+
+#create the dataframe
+fb_shares <- as.data.frame(fb_shares)
+fb_shares
+```
+
+# Data Preperation
+
+```{r}
+# select the columns that we think will help with analysis.
+
+fb_shares <- select(fb_shares, results.subsection, results.share_count, results.section, results.type)
+colnames(fb_shares) <- c("sub_section", "share_count", "section", "type")
+head(fb_shares)
+str(fb_shares)
+
+```
+
+# Data Exploration and Conclusion
+
+```{r}
+theme_set(theme_classic())
+
+ggplot(fb_shares, aes(type, share_count))+
+  geom_bar(stat="identity", width = 0.5, fill="tomato2")+
+  theme(axis.text.x=element_text(angle=65, vjust=0.6))
+
+
+```
+
+```{r}
+theme_set(theme_classic())
+
+ggplot(fb_shares, aes(sub_section, share_count))+
+  geom_bar(stat="identity", width = 0.5, fill="tomato2")+
+  theme(axis.text.x=element_text(angle=65, vjust=0.6))
+
+
+```
+
+We have 20 observations from ny times articles that are shared within the last 7 days in facebook. Not including the blank values under the sub section, we see that political articles are shared the most within the facebook users the most, for the last 7 days. 
+
+
+
